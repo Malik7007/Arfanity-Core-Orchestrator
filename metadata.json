@@ -1,0 +1,8 @@
+
+{
+  "name": "Enterprise Agentic Orchestrator",
+  "description": "A sophisticated multi-agent system for enterprise intent classification, risk assessment, knowledge retrieval, and human-in-the-loop approval workflows.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

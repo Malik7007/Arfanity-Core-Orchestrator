@@ -1,0 +1,14 @@
+
+{
+  "thresholds": {
+    "auto_approval_limit_sar": 10000,
+    "cfo_approval_required_sar": 500000,
+    "confidence_minimum": 0.7
+  },
+  "restricted_keywords": ["production credentials", "salary data", "board minutes"],
+  "risk_mapping": {
+    "procurement": "medium",
+    "security": "high",
+    "hr": "low"
+  }
+}
