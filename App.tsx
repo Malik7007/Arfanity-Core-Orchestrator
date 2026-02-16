@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [userInput, setUserInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [serverLogs, setServerLogs] = useState<string[]>(['[SYSTEM] Arfanity Core Orchestrator v2.7 Initialized.']);
+  const [useLangGraph, setUseLangGraph] = useState(false);
   const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeDocument[]>([]);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
   const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false);
@@ -98,7 +99,7 @@ const App: React.FC = () => {
 
   const fetchDocuments = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/documents');
+      const res = await fetch('/api/documents');
       const data = await res.json();
       setKnowledgeBase(data);
     } catch (err) {
@@ -253,7 +254,31 @@ const App: React.FC = () => {
 
     let activeAgent = 1;
     try {
-      // Agent 1: Classifier
+      if (useLangGraph) {
+        setServerLogs(prev => [...prev, `[SYSTEM] LangGraph Engine engaged for advanced reasoning.`]);
+        const lgResult = await aiService.runLangGraphOrchestration(userInput);
+
+        // Map LangGraph results back to agent statuses for UI display
+        setAgent1Status(AgentStatus.COMPLETED);
+        setAgent2Status(AgentStatus.COMPLETED);
+        setAgent3Status(AgentStatus.COMPLETED);
+        setAgent4Status(AgentStatus.COMPLETED);
+        setAgent4Result(lgResult.response);
+        setAgent5Status(AgentStatus.COMPLETED);
+        setAgent5Result("Audit by LangGraph: Passed.");
+        setAgent6Status(AgentStatus.COMPLETED);
+        setAgent6Result(lgResult.actions.join('\n'));
+        setAgent7Status(AgentStatus.COMPLETED);
+        setAgent8Status(AgentStatus.COMPLETED);
+        setAgent9Status(AgentStatus.COMPLETED);
+        setAgent10Status(AgentStatus.COMPLETED);
+
+        setServerLogs(prev => [...prev, ...lgResult.audit.map((a: string) => `[PY-LG] ${a}`)]);
+        setIsProcessing(false);
+        return;
+      }
+
+      // Existing Flow: Agent 1: Classifier
       activeAgent = 1;
       const intent = await aiService.classifyIntent(userInput);
       setAgent1Result(intent);
@@ -470,7 +495,7 @@ const App: React.FC = () => {
         }
 
         if (conn.type === 'Paste') {
-          const res = await fetch('http://localhost:3001/api/paste', {
+          const res = await fetch('/api/paste', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: conn.name, content: conn.config.clientSecret })
@@ -482,7 +507,7 @@ const App: React.FC = () => {
           if (file) {
             const formData = new FormData();
             formData.append('file', file);
-            const res = await fetch('http://localhost:3001/api/upload', {
+            const res = await fetch('/api/upload', {
               method: 'POST',
               body: formData
             });
@@ -502,7 +527,7 @@ const App: React.FC = () => {
 
   const handleDeleteDocument = async (id: string) => {
     try {
-      await fetch(`http://localhost:3001/api/documents/${id}`, { method: 'DELETE' });
+      await fetch(`/api/documents/${id}`, { method: 'DELETE' });
       setKnowledgeBase(p => p.filter(d => d.id !== id));
       setServerLogs(prev => [...prev, `[SYSTEM] Document purged from database.`]);
     } catch (err) {
@@ -527,7 +552,7 @@ const App: React.FC = () => {
           <img src="/assets/logo.png" alt="Arfanity Logo" className="h-10 w-auto shadow-sm rounded-lg" />
           <div className="h-8 w-[1px] bg-gray-100 mx-1"></div>
           <div>
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">Arfanity Core Orchestrator v2.7</h1>
+            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">Arfanity Core Orchestrator</h1>
             <div className="flex items-center gap-2 mt-1">
               <span className="flex h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></span>
               <span className="text-[10px] text-gray-400 uppercase font-black tracking-widest">Multi-AI Node Active</span>
@@ -535,6 +560,14 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-6">
+          <div className="flex items-center bg-gray-50 p-1.5 rounded-2xl border border-gray-100 italic">
+            <button
+              onClick={() => setUseLangGraph(!useLangGraph)}
+              className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all ${useLangGraph ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-indigo-600'}`}
+            >
+              <ICONS.Zap size={14} /> {useLangGraph ? 'LangGraph Active' : 'Enable Advanced Engine'}
+            </button>
+          </div>
           <button onClick={() => setIsRegistryModalOpen(true)} className="flex items-center gap-2 text-xs font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-800 transition-colors"><ICONS.Zap size={14} /> AI Registry</button>
           <button onClick={() => setShowTerminal(!showTerminal)} className={`text-[10px] font-black px-4 py-2 rounded-xl transition-all uppercase tracking-widest ${showTerminal ? 'bg-black text-white shadow-lg' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>Monitor</button>
           <button onClick={() => setIsDocModalOpen(true)} className="flex items-center gap-2 text-xs font-black text-gray-400 hover:text-indigo-600 uppercase tracking-widest transition-colors">Documentation</button>

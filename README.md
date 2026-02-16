@@ -11,8 +11,8 @@ This platform isn't just a chatbot; it is a **Grounded Reasoning Engine** that e
 
 ## ⚡ Key Architectural Pillars
 
-### 1. Governed Multi-Agent Workflow
-The system utilizes a proprietary orchestration sequence where 10 specialized agents collaborate in real-time to process a single request. 
+### 1. Governed Multi-Agent Workflow (LangGraph)
+The system features a dual-engine architecture. While the standard flow handles rapid requests, the **Advanced LangGraph Engine** (Python-based) enables stateful, cyclic reasoning across 10 specialized agents for complex problem-solving.
 
 ### 2. Deep RAG (Retrieval-Augmented Generation)
 Dynamic ingestion of enterprise knowledge (PDF, DOCX, and Text) with semantic grounding. The system effectively prevents AI hallucinations by strictly enforcing document citation requirements.
@@ -55,9 +55,12 @@ Every request triggers a "Mission" where each agent performs a specific role:
 
 ## 🛠 Tech Stack
 *   **Frontend**: React 19 (TSX), Vite, Tailwind CSS (Vanilla PostCSS), Framer Motion.
-*   **Intelligence**: Google Generative AI (Gemini SDK), Multi-model Provider Integration.
-*   **Backend**: Node.js, Express, Multer (Document parsing), PDF-Parse, Mammoth.
-*   **State Management**: LocalStorage Persistence for UI state and configuration.
+*   **Orchestration Engine**: **LangGraph** & **LangChain** (Python 3.14).
+*   **Primary AI**: Google Generative AI (Gemini SDK).
+*   **Hybrid Backend**: 
+    *   **Node.js/Express**: Manages document ingestion, parsing, and UI state.
+    *   **Python/FastAPI**: Powers the advanced multi-agent orchestration graph.
+*   **State Management**: LocalStorage Persistence and Pythonic Agent State.
 
 ---
 
@@ -65,21 +68,27 @@ Every request triggers a "Mission" where each agent performs a specific role:
 
 ### Prerequisites
 *   Node.js (v18+)
-*   API Key for Google Gemini (or your preferred provider)
+*   Python (v3.10+)
+*   API Key for Google Gemini (configured in `.env.local`)
 
 ### Setup Instructions
-1. **Clone the Repository** (Link to be provided)
-2. **Install Dependencies**:
+1. **Clone the Repository**
+2. **Setup JavaScript Environment**:
    ```bash
    npm install
    ```
-3. **Configure Environment**:
+3. **Setup Python Virtual Environment & Dependencies**:
+   ```bash
+   # This automatically creates a venv and installs LangGraph/LangChain
+   npm run setup:py
+   ```
+4. **Configure Environment**:
    Create a `.env.local` in the root:
    ```env
    VITE_GOOGLE_API_KEY=your_key_here
    ```
-4. **Launch the Engine**:
-   To start both the frontend and the backend orchestration server simultaneously:
+5. **Launch the Full Ecosystem**:
+   To start the Frontend, Node.js Data Server, and Python LangGraph Engine simultaneously:
    ```bash
    npm run dev:full
    ```

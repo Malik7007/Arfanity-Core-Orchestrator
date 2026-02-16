@@ -482,6 +482,26 @@ export class AIService {
       return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     } catch { return undefined; }
   }
+  /**
+   * LangGraph Integration (Agent 1-10)
+   * Calls the Python-based LangGraph orchestration engine for stateful, multi-agent reasoning.
+   */
+  async runLangGraphOrchestration(query: string): Promise<any> {
+    this.log(`LangGraph Orchestration Triggered`, 'pro', 'Google');
+    try {
+      const res = await fetch('/py-api/v1/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+      if (!res.ok) throw new Error('LangGraph Engine Offline');
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      this.log(`LangGraph Engine Failed: ${err}`, 'error', 'Google');
+      throw err;
+    }
+  }
 }
 
 export const aiService = new AIService();

@@ -4,9 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite\" \"nodemon server/index.js\"",
     "server": "nodemon server/index.js",
-    "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
+    "backend:py": "backend/venv/Scripts/python backend/main.py",
+    "dev:full": "concurrently \"npm run dev\" \"npm run backend:py\"",
+    "setup:py": "backend/venv/Scripts/python -m pip install -r backend/requirements.txt",
     "build": "vite build",
     "preview": "vite preview"
   },
