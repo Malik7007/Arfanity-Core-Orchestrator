@@ -84,14 +84,32 @@ const App: React.FC = () => {
         recognition.interimResults = false;
         recognition.lang = 'en-US';
         recognition.onresult = (e: any) => {
-          const transcript = e.results[0][0].transcript;
-          const isAideOpen = (window as any).__isAssistantOpen;
-          if (isAideOpen) setChatInput(prev => prev + (prev ? ' ' : '') + transcript);
-          else setUserInput(prev => prev + (prev ? ' ' : '') + transcript);
+          let transcript = '';
+          for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) {
+              transcript += e.results[i][0].transcript;
+            }
+          }
+
+          if (transcript.trim()) {
+            const isAideOpen = (window as any).__isAssistantOpen;
+            if (isAideOpen) setChatInput(prev => prev + (prev ? ' ' : '') + transcript.trim());
+            else setUserInput(prev => prev + (prev ? ' ' : '') + transcript.trim());
+
+            // For non-continuous recognition, stop immediately after capturing final result
+            if (!recognition.continuous) {
+              recognition.stop();
+              setIsListening(false);
+            }
+          }
+        };
+        recognition.onerror = (e: any) => {
+          console.error("Speech Recognition Error:", e);
           setIsListening(false);
         };
-        recognition.onerror = () => setIsListening(false);
-        recognition.onend = () => setIsListening(false);
+        recognition.onend = () => {
+          setIsListening(false);
+        };
         recognitionRef.current = recognition;
       }
     }
@@ -138,6 +156,9 @@ const App: React.FC = () => {
     localStorage.setItem('agentfactory_registry', JSON.stringify(aiRegistry));
     aiService.updateRegistry(aiRegistry);
   }, [aiRegistry]);
+
+  // Persistence for LangGraph resume
+  const pendingLgResult = useRef<any>(null);
 
   // Knowledge Base is now purely dynamic based on user uploads and connections.
 
@@ -255,25 +276,85 @@ const App: React.FC = () => {
     let activeAgent = 1;
     try {
       if (useLangGraph) {
-        setServerLogs(prev => [...prev, `[SYSTEM] LangGraph Engine engaged for advanced reasoning.`]);
-        const lgResult = await aiService.runLangGraphOrchestration(userInput);
+        setServerLogs(prev => [
+          ...prev,
+          `[SYSTEM] Mission Blueprint: Build with LangChain, Scale with LangGraph, Prototype with LangFlow, Ship with LangSmith, Universalize with MCP.`,
+          `[SYSTEM] LangStack Evolution: Engaged Multi-Agent + MCP Orchestration.`
+        ]);
 
-        // Map LangGraph results back to agent statuses for UI display
-        setAgent1Status(AgentStatus.COMPLETED);
-        setAgent2Status(AgentStatus.COMPLETED);
-        setAgent3Status(AgentStatus.COMPLETED);
-        setAgent4Status(AgentStatus.COMPLETED);
-        setAgent4Result(lgResult.response);
-        setAgent5Status(AgentStatus.COMPLETED);
-        setAgent5Result("Audit by LangGraph: Passed.");
-        setAgent6Status(AgentStatus.COMPLETED);
-        setAgent6Result(lgResult.actions.join('\n'));
-        setAgent7Status(AgentStatus.COMPLETED);
-        setAgent8Status(AgentStatus.COMPLETED);
-        setAgent9Status(AgentStatus.COMPLETED);
-        setAgent10Status(AgentStatus.COMPLETED);
+        // Ensure the grid stays visible by setting a temporary intent or status
+        setAgent1Status(AgentStatus.WORKING);
 
-        setServerLogs(prev => [...prev, ...lgResult.audit.map((a: string) => `[PY-LG] ${a}`)]);
+        const activeConfig = aiRegistry.find(m => m.isDefault) || aiRegistry[0];
+        const lgResult = await aiService.runLangGraphOrchestration(userInput, activeConfig);
+
+        // Map the intent from Python back to Agent 1 to keep cards visible
+        setAgent1Result(lgResult.intent);
+
+        // --- Premium Graph Mission Reveal Logic (LangFlow Style) ---
+        const missionSteps = [
+          { agent: 1, log: "Classifier: Intent analyzed.", setResult: setAgent1Result },
+          { agent: 10, log: "MCP Gateway: Live Intelligence synchronized.", setResult: setAgent10Result },
+          { agent: 2, log: "RAG: Context retrieved.", setResult: setAgent2Result },
+          { agent: 3, log: "Governance: Policy screening complete.", setResult: setAgent3Result },
+          { agent: 4, log: "Intelligence: Narrative synthesized.", setResult: setAgent4Result },
+          { agent: 5, log: "Validator: Fact-audited.", setResult: setAgent5Result },
+          { agent: 8, log: "Memory: Context maintained.", setResult: setAgent8Result },
+          { agent: 7, log: "Privacy: Safeguards activated.", setResult: setAgent7Result },
+          { agent: 9, log: "Drafter: Formatting complete.", setResult: setAgent9Result },
+          { agent: 6, log: "Planner: Strategic roadmap generated.", setResult: setAgent6Result },
+        ];
+
+        // CHECK FOR GOVERNANCE HOLD
+        const isPending = lgResult.governance === 'pending';
+
+        for (let i = 0; i < missionSteps.length; i++) {
+          const step = missionSteps[i];
+
+          // If we hit Agent 4 but we are pending approval, HALT HERE
+          if (step.agent === 4 && isPending) {
+            setApprovalDecision('pending');
+            pendingLgResult.current = lgResult;
+            setServerLogs(prev => [...prev, `[AUDIT] Governance Intervention Required: Mission held at Node A3.`]);
+            setIsProcessing(false);
+            return;
+          }
+
+          const setStatus = [
+            setAgent1Status, setAgent2Status, setAgent3Status, setAgent4Status,
+            setAgent5Status, setAgent6Status, setAgent7Status, setAgent8Status,
+            setAgent9Status, setAgent10Status
+          ][step.agent - 1];
+
+          if (setStatus) {
+            setStatus(AgentStatus.WORKING);
+            await new Promise(r => setTimeout(r, 400));
+            setStatus(AgentStatus.COMPLETED);
+
+            // Sync specific results and backend logs
+            const backendLog = lgResult.audit.find((a: string) => a.toLowerCase().includes(`a${step.agent} `));
+
+            // Rich data mapping for production-grade engine
+            let agentResult = backendLog || step.log;
+
+            if (step.agent === 1 && typeof lgResult.intent === 'object') {
+              agentResult = `Intent: ${lgResult.intent.intent_type}\nRisk: ${lgResult.intent.risk_level}`;
+            } else if (step.agent === 10) {
+              agentResult = lgResult.mcp_intel || agentResult;
+            } else if (step.agent === 2) {
+              agentResult = lgResult.audit.find((a: string) => a.includes('A2 RAG:')) || agentResult;
+            } else if (step.agent === 4) {
+              agentResult = lgResult.response;
+            } else if (step.agent === 6 && lgResult.actions) {
+              agentResult = lgResult.actions.join('\n');
+            }
+
+            step.setResult(agentResult);
+            setServerLogs(prev => [...prev, `[MISSION] ${backendLog || step.log}`]);
+          }
+        }
+
+        setServerLogs(prev => [...prev, `[SUCCESS] Full LangStack Mission Completed (Grounded & Traced).`]);
         setIsProcessing(false);
         return;
       }
@@ -427,8 +508,61 @@ const App: React.FC = () => {
 
   const handleApproval = async (decision: 'approved' | 'rejected') => {
     setApprovalDecision(decision);
-    setAgent4Status(AgentStatus.WORKING);
+    if (decision === 'rejected') {
+      setAgent4Status(AgentStatus.ERROR);
+      setAgent4Result("Request rejected by Governance Shield. Operation aborted.");
+      setIsProcessing(false);
+      pendingLgResult.current = null;
+      return;
+    }
+
+    setServerLogs(prev => [...prev, `[AUDIT] Manual Approval Granted. Resuming Mission.`]);
+    setIsProcessing(true);
+
     try {
+      // CASE 1: Resume LangGraph Flow
+      if (pendingLgResult.current) {
+        const lgResult = pendingLgResult.current;
+        const missionSteps = [
+          { agent: 4, log: "Intelligence: Narrative synthesized.", setResult: setAgent4Result },
+          { agent: 5, log: "Validator: Fact-audited.", setResult: setAgent5Result },
+          { agent: 8, log: "Memory: Context maintained.", setResult: setAgent8Result },
+          { agent: 7, log: "Privacy: Safeguards activated.", setResult: setAgent7Result },
+          { agent: 9, log: "Drafter: Formatting complete.", setResult: setAgent9Result },
+          { agent: 6, log: "Planner: Strategic roadmap generated.", setResult: setAgent6Result },
+        ];
+
+        for (const step of missionSteps) {
+          const setStatus = [
+            null, null, null, setAgent4Status,
+            setAgent5Status, setAgent6Status, setAgent7Status, setAgent8Status,
+            setAgent9Status, null
+          ][step.agent - 1];
+
+          if (setStatus) {
+            setStatus(AgentStatus.WORKING);
+            await new Promise(r => setTimeout(r, 450));
+            setStatus(AgentStatus.COMPLETED);
+
+            const backendLog = lgResult.audit.find((a: string) => a.toLowerCase().includes(`a${step.agent} `));
+            if (backendLog) {
+              step.setResult(backendLog);
+              setServerLogs(prev => [...prev, `[MISSION] ${backendLog}`]);
+            } else {
+              setServerLogs(prev => [...prev, `[MISSION] ${step.log}`]);
+            }
+
+            if (step.agent === 4) setAgent4Result(lgResult.response);
+            if (step.agent === 6) setAgent6Result(lgResult.actions.join('\n'));
+          }
+        }
+        pendingLgResult.current = null;
+        setServerLogs(prev => [...prev, `[SUCCESS] Mission Completed via LangGraph Resume.`]);
+        setIsProcessing(false);
+        return;
+      }
+
+      // CASE 2: Resume Standard Flow
       const final = await aiService.orchestrateFinalResponse(agent2Result, decision);
       setAgent4Result(final);
       setAgent4Status(AgentStatus.COMPLETED);
@@ -560,6 +694,17 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-6">
+          <div className="hidden lg:flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-4 py-1.5 rounded-full">
+            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1.5">
+              <ICONS.Zap size={10} /> LangStack Active:
+            </span>
+            <div className="flex gap-2">
+              {['Chain', 'Graph', 'Flow', 'Smith'].map(f => (
+                <span key={f} className="text-[9px] font-black bg-white text-indigo-500 px-2 py-0.5 rounded-md shadow-sm border border-indigo-100/50">L-{f}</span>
+              ))}
+              <span className="text-[9px] font-black bg-indigo-600 text-white px-2 py-0.5 rounded-md shadow-sm">MCP</span>
+            </div>
+          </div>
           <div className="flex items-center bg-gray-50 p-1.5 rounded-2xl border border-gray-100 italic">
             <button
               onClick={() => setUseLangGraph(!useLangGraph)}

@@ -10,10 +10,9 @@ export class AIService {
     Google: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro', 'gemini-pro-vision', 'gemini-1.5-flash-8b'],
     OpenAI: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo', 'o1-preview', 'o1-mini'],
     Groq: [
-      'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768', 'gemma-7b-it',
-      'llama-3.1-405b-reasoning', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant',
+      'llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant',
       'llama-3.2-11b-vision-preview', 'llama-3.2-3b-preview', 'llama-3.2-1b-preview',
-      'llama-guard-3-8b', 'llava-v1.5-7b-4096'
+      'mixtral-8x7b-32768', 'gemma-7b-it'
     ],
     OpenRouter: [
       'anthropic/claude-3.5-sonnet', 'google/gemini-pro-1.5', 'meta-llama/llama-3.1-405b',
@@ -436,19 +435,22 @@ export class AIService {
       await new Promise(r => setTimeout(r, 600));
 
       if (query.includes('what') && (query.includes('platform') || query.includes('factory') || query.includes('this'))) {
-        return "The **Agentic Factory** is an enterprise-grade multi-agent orchestration platform. It uses specialized AI agents (Classifier, RAG, Governance) to process complex requests with 100% data grounding and auditability.";
+        return "The **Arfanity Core Orchestrator v3.5-PROD** is an enterprise-grade neural orchestration platform. It uses a 10-agent multi-layered pipeline (LangStack) to process complex requests with 100% data grounding, neural privacy protection, and semantic validation.";
       }
       if (query.includes('how') && (query.includes('source') || query.includes('data') || query.includes('add'))) {
-        return "To add data, use the **'Add Source'** button in the left sidebar. You can upload files (PDF/DOCX) or paste text directly. The system then automatically converts your data into a searchable knowledge base.";
+        return "To add data, use the **'Connect Source'** button in the left sidebar. You can upload files (PDF/DOCX) or paste text directly. The **RAG Engine (Agent 2)** then automatically synchronizes this data into a searchable knowledge base for the neural agents.";
       }
       if (query.includes('agent') || query.includes('work') || query.includes('flow')) {
-        return "Our orchestration flow consists of four key stages:\n1. **Classifier**: Detects intent and risk.\n2. **RAG Engine**: Retrieves facts from your data.\n3. **Governance**: Enforces compliance and manual holds.\n4. **Orchestrator**: Synthesizes the final verified response.";
+        return "The **v3.5 Neural Flow** consists of four critical phases:\n1. **Intelligence**: Neural Classifier (A1) & RAG Engine (A2).\n2. **Governance**: Compliance Check (A3) & Human-in-the-Loop.\n3. **Synthesis**: Lead Orchestrator (A4) & Semantic Validator (A5).\n4. **Finalization**: Privacy Shield (A7), Action Planner (A6), and Professional Drafter (A9).";
       }
       if (query.includes('ai') || query.includes('registry') || query.includes('model')) {
-        return "You can configure your AI engines in the **AI Registry** (top right). We support Google Gemini, OpenAI, Groq, and Localhost models (like Ollama).";
+        return "You can configure your AI engines in the **AI Registry** (top right). We support Google Gemini, OpenAI, Groq, Anthropic, and Local Intelligence via Ollama. v3.5-PROD ensures session persistence across all models.";
+      }
+      if (query.includes('mcp') || query.includes('protocol')) {
+        return "The **Model Context Protocol (MCP)** allows our agents to securely connect to external enterprise tools like GitHub, Slack, or SQL databases. Agent 10 acts as the arbiter for these external intelligence streams.";
       }
 
-      return "I'm the Agentic Factory Support AI. I can guide you through setting up data connections, configuring agent models, or understanding the orchestration flow. How can I assist you further?";
+      return "I'm the Arfanity Core Support AI (v3.5-PROD). I can guide you through the neural orchestration flow, data grounding protocols, or configuring the LangStack. How can I assist you further?";
     }
 
     try {
@@ -486,19 +488,38 @@ export class AIService {
    * LangGraph Integration (Agent 1-10)
    * Calls the Python-based LangGraph orchestration engine for stateful, multi-agent reasoning.
    */
-  async runLangGraphOrchestration(query: string): Promise<any> {
-    this.log(`LangGraph Orchestration Triggered`, 'pro', 'Google');
+  async runLangGraphOrchestration(query: string, config: AIModelConfiguration): Promise<any> {
+    this.log(`LangGraph Orchestration [${config.provider}] Triggered`, 'pro', config.provider);
+    // Generate a unique thread ID for the current session to enable persistence
+    const threadId = sessionStorage.getItem('arfanity_thread_id') || `session_${Date.now()}`;
+    sessionStorage.setItem('arfanity_thread_id', threadId);
+
     try {
       const res = await fetch('/py-api/v1/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
+        body: JSON.stringify({
+          query,
+          thread_id: threadId,
+          config: {
+            provider: config.provider,
+            model_name: config.modelName,
+            api_key: config.apiKey,
+            base_url: config.baseUrl
+          }
+        })
       });
-      if (!res.ok) throw new Error('LangGraph Engine Offline');
+
+      if (!res.ok) {
+        const errorBody = await res.text();
+        this.log(`LangGraph API Error: ${res.status} ${res.statusText} - ${errorBody}`, 'error', 'Google');
+        throw new Error(`Engine Offline (Code ${res.status}): ${errorBody}`);
+      }
+
       const data = await res.json();
       return data;
     } catch (err) {
-      this.log(`LangGraph Engine Failed: ${err}`, 'error', 'Google');
+      this.log(`LangGraph Connection Failed: ${err.message}`, 'error', 'Google');
       throw err;
     }
   }

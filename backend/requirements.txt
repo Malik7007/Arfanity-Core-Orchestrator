@@ -4,4 +4,11 @@ pydantic
 langchain
 langgraph
 langchain-google-genai
+langchain-openai
+langchain-groq
+langchain-anthropic
 python-dotenv
+mcp
+fastmcp
+langchain-mcp-adapters
+chromadb

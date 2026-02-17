@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment
+.env
+.env.local
+.env.*
+
+# Python
+backend/venv/
+backend/__pycache__/
+*.pyc
+backend/chroma_db/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
