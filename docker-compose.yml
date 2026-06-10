@@ -18,7 +18,9 @@ services:
       dockerfile: Dockerfile.frontend
     container_name: arfanity-frontend
     ports:
-      - "3000:3000"
+      # Why port 3010 is mapped:
+      # Host ports 3000 and 3200 are occupied/busy. We map the frontend service to port 3010 on the host.
+      - "3010:3000"
     environment:
       - VITE_NODE_BACKEND_URL=http://node-backend:3002
       - VITE_PYTHON_BACKEND_URL=http://python-backend:8000
