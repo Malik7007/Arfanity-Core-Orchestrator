@@ -98,7 +98,7 @@ const DocumentationModal: React.FC<DocumentationModalProps> = ({ isOpen, onClose
             </div>
           )}
 
-          {activeTab === 'integrations' && (activeTab === 'integrations' && (
+          {activeTab === 'integrations' && (
             <div className="animate-in slide-in-from-left-4 duration-300">
               <h3 className="text-lg font-black text-gray-900 mb-8 tracking-tight">MCP & Knowledge Ecosystem</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -128,7 +128,7 @@ const DocumentationModal: React.FC<DocumentationModalProps> = ({ isOpen, onClose
                 </div>
               </div>
             </div>
-          ))}
+          )}
 
           {activeTab === 'governance' && (
             <div className="animate-in slide-in-from-left-4 duration-300">

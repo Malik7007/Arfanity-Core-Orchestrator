@@ -1,0 +1,23 @@
+# Why this file exists:
+# This Dockerfile sets up the Node.js runtime environment for the Express backend server (server/index.js).
+# It uses Node 20 on Alpine Linux for efficiency and stability.
+# By running package installation inside the container, we avoid running Windows-compiled native node_modules
+# on Linux, ensuring binary compatibility for dependencies.
+
+FROM node:20-alpine
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy package configurations first to leverage Docker layer caching
+COPY package.json package-lock.json ./
+
+# Install project dependencies
+RUN npm install
+
+# Expose port 3002 which is the hardcoded port of the Node.js Express server
+EXPOSE 3002
+
+# Run the Node Express server. Nodemon is not strictly needed in Docker if we aren't editing server code,
+# but we run nodemon via npx for development convenience if the developer updates server code.
+CMD ["npx", "nodemon", "server/index.js"]

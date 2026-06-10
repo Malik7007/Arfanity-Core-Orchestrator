@@ -1,0 +1,60 @@
+# Why this file exists:
+# This Docker Compose file orchestrates the frontend, node-backend, and python-backend services.
+# It sets up a unified local development stack, establishing network routing and file synchronization.
+# 
+# Tricky Logic / Setup Details:
+# - Bind Mounts (`.:/app`): Synchronizes code changes, file uploads (`uploads/`), and databases (`server/db.json` and `backend/chroma_db/`) to the host machine.
+# - Anonymous Volumes (`/app/node_modules`, `/app/backend/venv`): Excludes host-side native packages (e.g. compiled for Windows) from overriding container-side packages (built for Linux inside Docker), preventing crashes.
+# - Environment Injection (`env_file`): Automatically loads APIs key from `.env.local` on the host, passing them directly to container processes.
+# - Routing configuration: Passes custom proxy targets via environment variables (`VITE_NODE_BACKEND_URL` and `VITE_PYTHON_BACKEND_URL`) so that the Vite container knows to route API traffic to backend containers instead of localhost.
+
+version: '3.8'
+
+services:
+  # 1. React Web Frontend (Vite)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: arfanity-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_NODE_BACKEND_URL=http://node-backend:3002
+      - VITE_PYTHON_BACKEND_URL=http://python-backend:8000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - .env.local
+    depends_on:
+      - node-backend
+      - python-backend
+
+  # 2. Node.js Database/Upload server (Express)
+  node-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: arfanity-node-backend
+    ports:
+      - "3002:3002"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - .env.local
+
+  # 3. Multi-agent Orchestration Engine (FastAPI + LangGraph)
+  python-backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: arfanity-python-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - /app/backend/venv
+    env_file:
+      - .env.local

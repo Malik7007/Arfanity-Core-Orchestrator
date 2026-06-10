@@ -14,6 +14,7 @@ import AgentCard from './components/AgentCard';
 import DocumentationModal from './components/DocumentationModal';
 import ConnectionManagerModal from './components/ConnectionManagerModal';
 import ModelRegistryModal from './components/ModelRegistryModal';
+import ChatRoom from './components/ChatRoom';
 
 const App: React.FC = () => {
   const [userInput, setUserInput] = useState('');
@@ -27,6 +28,7 @@ const App: React.FC = () => {
   const [showTerminal, setShowTerminal] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const [isSpeechLoading, setIsSpeechLoading] = useState(false);
+  const [isChatRoomOpen, setIsChatRoomOpen] = useState(false);
 
   const [aiRegistry, setAiRegistry] = useState<AIModelConfiguration[]>(() => {
     const saved = localStorage.getItem('agentfactory_registry');
@@ -785,7 +787,13 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-8 border-t border-gray-100">
+          <div className="pt-8 border-t border-gray-100 space-y-4">
+            <button
+              onClick={() => setIsChatRoomOpen(true)}
+              className="w-full flex items-center gap-4 p-5 rounded-2xl bg-white border-2 border-indigo-600 text-indigo-600 font-black text-xs hover:bg-indigo-50 transition-all shadow-lg shadow-indigo-100 group"
+            >
+              <ICONS.Agent2 size={20} className="group-hover:scale-110 transition-transform" /> Neural Chat Room
+            </button>
             <button onClick={() => setIsAssistantOpen(true)} className="w-full flex items-center gap-4 p-5 rounded-2xl bg-indigo-600 text-white font-black text-xs hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 group">
               <ICONS.Agent4 size={20} className="group-hover:rotate-12 transition-transform" /> Platform Support
             </button>
@@ -1033,6 +1041,14 @@ const App: React.FC = () => {
           {isAssistantOpen ? <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> : <ICONS.Agent4 className="text-white" size={32} />}
         </button>
       </div>
+
+      <ChatRoom
+        isOpen={isChatRoomOpen}
+        onClose={() => setIsChatRoomOpen(false)}
+        knowledgeBase={knowledgeBase}
+        onUpload={handleAddConnection}
+        onDelete={handleDeleteDocument}
+      />
     </div >
   );
 };

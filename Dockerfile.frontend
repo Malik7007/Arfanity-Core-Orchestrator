@@ -1,0 +1,23 @@
+# Why this file exists:
+# This Dockerfile sets up the environment for the Vite React frontend development server.
+# It uses Node 20 on Alpine Linux to provide a lightweight, efficient execution runtime.
+# It ensures dependencies are installed on Linux inside the container to prevent architecture conflicts
+# with host-compiled node_modules (e.g. if the developer is running Windows locally).
+
+FROM node:20-alpine
+
+# Set working directory inside the container
+WORKDIR /app
+
+# Copy package configurations first to optimize Docker layer caching
+COPY package.json package-lock.json ./
+
+# Install packages inside the container to guarantee Linux-native binaries
+RUN npm install
+
+# Note: The actual source code will be bind-mounted at runtime for live development.
+# We expose port 3000 where the Vite server will run.
+EXPOSE 3000
+
+# Run Vite in host mode so it listens on all interfaces (0.0.0.0) allowing Docker port-mapping to work.
+CMD ["npx", "vite", "--host", "0.0.0.0", "--port", "3000"]
